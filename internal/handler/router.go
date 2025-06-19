@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func Router() http.Handler {
+func Router(handlers Handler) http.Handler {
 	r := chi.NewRouter()
 	return r
 }

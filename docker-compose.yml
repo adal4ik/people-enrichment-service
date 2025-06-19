@@ -1,27 +1,25 @@
-version: "3.9"
+  services:
+    db:
+      image: postgres:16-alpine
+      restart: always
+      environment:
+        POSTGRES_USER: ${DB_USER}
+        POSTGRES_PASSWORD: ${DB_PASSWORD}
+        POSTGRES_DB: ${DB_NAME}
+      ports:
+        - "5432:5432"
+      volumes:
+        - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:z
 
-services:
-  db:
-    image: postgres:16-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
+    app:
+      build: .
+      depends_on:
+        - db
+      env_file:
+        - .env
+      ports:
+        - "8080:8080"
+      restart: always
 
-  app:
-    build: .
-    depends_on:
-      - db
-    env_file:
-      - .env
-    ports:
-      - "8080:8080"
-    restart: always
-
-volumes:
-  db_data:
+  volumes:
+    db_data:
