@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/adal4ik/people-enrichment-service/internal/models"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
@@ -235,5 +236,40 @@ func TestUpdatePerson_Error(t *testing.T) {
 	err := svc.UpdatePerson(context.Background(), person)
 	assert.Error(t, err)
 	assert.Equal(t, expectedErr, err)
+	repo.AssertExpectations(t)
+}
+func (m *mockPersonRepo) GetPerson(ctx context.Context, id uuid.UUID) (models.Person, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(models.Person), args.Error(1)
+}
+
+func TestGetPerson_Success(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	svc := &PersonService{repo: repo, logger: logger}
+	id := uuid.New()
+	expected := models.Person{Name: "Test", Age: 42}
+
+	repo.On("GetPerson", mock.Anything, id).Return(expected, nil)
+
+	person, err := svc.GetPerson(context.Background(), id)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, person)
+	repo.AssertExpectations(t)
+}
+
+func TestGetPerson_Error(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	svc := &PersonService{repo: repo, logger: logger}
+	id := uuid.New()
+	expectedErr := errors.New("not found")
+
+	repo.On("GetPerson", mock.Anything, id).Return(models.Person{}, expectedErr)
+
+	person, err := svc.GetPerson(context.Background(), id)
+	assert.Error(t, err)
+	assert.Equal(t, expectedErr, err)
+	assert.Equal(t, models.Person{}, person)
 	repo.AssertExpectations(t)
 }
