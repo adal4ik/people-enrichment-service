@@ -148,6 +148,10 @@ func (p *PersonHandler) GetPerson(w http.ResponseWriter, req *http.Request) {
 		p.handleError(w, req, 500, "failed to retrieve person", err)
 		return
 	}
+	if person.ID == uuid.Nil {
+		p.handleError(w, req, 404, "person not found", nil)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(person); err != nil {
 		p.handleError(w, req, 500, "failed to encode response", err)

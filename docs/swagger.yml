@@ -1,0 +1,133 @@
+openapi: 3.0.3
+info:
+  title: People Enrichment Service API
+  version: 1.0.0
+  description: API for managing people records.
+servers:
+  - url: http://localhost:8080
+paths:
+  /person:
+    post:
+      summary: Create a new person
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Person'
+      responses:
+        '201':
+          description: Person created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '400':
+          description: Invalid input
+  /persons:
+    get:
+      summary: Get list of persons
+      responses:
+        '200':
+          description: List of persons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Person'
+  /person/{id}:
+    get:
+      summary: Get person by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Person found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '404':
+          description: Person not found
+    delete:
+      summary: Delete person by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Person deleted
+        '404':
+          description: Person not found
+    put:
+      summary: Update person by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Person'
+      responses:
+        '200':
+          description: Person updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '400':
+          description: Invalid input
+        '404':
+          description: Person not found
+components:
+  schemas:
+    Person:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "74925167-3782-4ea9-b379-2c0b0cab711d"
+        name:
+          type: string
+          example: "John"
+        surname:
+          type: string
+          example: "Doe"
+        patronymic:
+          type: string
+          example: "Ivanovich"
+        age:
+          type: integer
+          example: 30
+        gender:
+          type: string
+          example: "male"
+        nationality:
+          type: string
+          example: "US"
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-06-19T12:34:56Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-06-19T12:34:56Z"
+      required:
+        - name
+        - surname
+        - patronymic

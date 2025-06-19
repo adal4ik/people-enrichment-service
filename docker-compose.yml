@@ -1,25 +1,37 @@
-  services:
-    db:
-      image: postgres:16-alpine
-      restart: always
-      environment:
-        POSTGRES_USER: ${DB_USER}
-        POSTGRES_PASSWORD: ${DB_PASSWORD}
-        POSTGRES_DB: ${DB_NAME}
-      ports:
-        - "5432:5432"
-      volumes:
-        - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:z
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:z
 
-    app:
-      build: .
-      depends_on:
-        - db
-      env_file:
-        - .env
-      ports:
-        - "8080:8080"
-      restart: always
+  app:
+    build: .
+    depends_on:
+      - db
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    restart: always
 
-  volumes:
-    db_data:
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./docs/swagger.yml:/usr/share/nginx/html/swagger.yml:ro,z
+    environment:
+      SWAGGER_JSON: /swagger.yml
+    restart: always
+    depends_on:
+    - app
+
+volumes:
+  db_data:
