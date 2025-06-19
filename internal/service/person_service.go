@@ -13,6 +13,7 @@ import (
 
 type PersonServiceInterface interface {
 	CreatePerson(ctx context.Context, person models.Person) error
+	// GetPersons(ctx context.Context)
 }
 
 type PersonService struct {
@@ -105,28 +106,37 @@ func (p *PersonService) getGender(ctx context.Context, name string) (string, err
 	}
 	return result.Gender, nil
 }
-
 func (p *PersonService) getNationality(ctx context.Context, name string) (string, error) {
 	url := fmt.Sprintf("https://api.nationalize.io/?name=%s", name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to call agify API: %w", err)
+		return "", fmt.Errorf("failed to call nationalize API: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("agify API returned status %d", resp.StatusCode)
+		return "", fmt.Errorf("nationalize API returned status %d", resp.StatusCode)
 	}
 
 	var result struct {
-		Nationality string `json:"nationality"`
+		Country []struct {
+			CountryID   string  `json:"country_id"`
+			Probability float64 `json:"probability"`
+		} `json:"country"`
 	}
+
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", fmt.Errorf("failed to decode agify API response: %w", err)
+		return "", fmt.Errorf("failed to decode nationalize API response: %w", err)
 	}
-	return result.Nationality, nil
+
+	if len(result.Country) > 0 {
+		return result.Country[0].CountryID, nil
+	}
+
+	return "", nil
 }
