@@ -26,6 +26,11 @@ func (m *mockPersonRepo) GetPersons(ctx context.Context, limit, offset, ageMin, 
 	return args.Get(0).([]models.Person), args.Error(1)
 }
 
+func (m *mockPersonRepo) DeletePerson(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
 // Mock PersonService for API enrichment methods
 type mockPersonService struct {
 	*PersonService
@@ -175,5 +180,33 @@ func TestGetPersons(t *testing.T) {
 	res, err := svc.GetPersons(context.Background(), 10, 0, 0, 100, "a", "b", "f", "US")
 	assert.NoError(t, err)
 	assert.Equal(t, expected, res)
+	repo.AssertExpectations(t)
+}
+
+func TestDeletePerson_Success(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	svc := &PersonService{repo: repo, logger: logger}
+	id := "123"
+
+	repo.On("DeletePerson", mock.Anything, id).Return(nil)
+
+	err := svc.DeletePerson(context.Background(), id)
+	assert.NoError(t, err)
+	repo.AssertExpectations(t)
+}
+
+func TestDeletePerson_Error(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	svc := &PersonService{repo: repo, logger: logger}
+	id := "456"
+	expectedErr := errors.New("delete error")
+
+	repo.On("DeletePerson", mock.Anything, id).Return(expectedErr)
+
+	err := svc.DeletePerson(context.Background(), id)
+	assert.Error(t, err)
+	assert.Equal(t, expectedErr, err)
 	repo.AssertExpectations(t)
 }
