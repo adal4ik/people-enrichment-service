@@ -50,6 +50,10 @@ func (p *PersonHandler) CreatePerson(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	var person models.Person
 	err := decoder.Decode(&person)
+	if person.Name == "" {
+		p.handleError(w, req, 400, "name is required", nil)
+		return
+	}
 	if err != nil {
 		p.handleError(w, req, 400, "failed to decode request body", err)
 		return
@@ -132,6 +136,32 @@ func (p *PersonHandler) GetPersons(w http.ResponseWriter, req *http.Request) {
 		zap.String("surname", surname))
 }
 
+func (p *PersonHandler) GetPerson(w http.ResponseWriter, req *http.Request) {
+	id := chi.URLParam(req, "id")
+	uuidValue, err := uuid.Parse(id)
+	if err != nil {
+		p.handleError(w, req, 400, "invalid UUID format for id", err)
+		return
+	}
+	person, err := p.service.GetPerson(req.Context(), uuidValue)
+	if err != nil {
+		p.handleError(w, req, 500, "failed to retrieve person", err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(person); err != nil {
+		p.handleError(w, req, 500, "failed to encode response", err)
+		return
+	}
+	p.logger.Info("retrieved person",
+		zap.String("id", id),
+		zap.String("name", person.Name),
+		zap.String("surname", person.Surname),
+		zap.Int("age", person.Age),
+		zap.String("gender", person.Gender),
+		zap.String("nationality", person.Nationality),
+	)
+}
 func (p *PersonHandler) DeletePerson(w http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 	if id == "" {
@@ -167,7 +197,7 @@ func (p *PersonHandler) UpdatePerson(w http.ResponseWriter, req *http.Request) {
 		p.handleError(w, req, 400, "failed to decode request body", err)
 		return
 	}
-	person.ID = uuidValue // Ensure the ID is set from the URL
+	person.ID = uuidValue
 
 	err = p.service.UpdatePerson(req.Context(), person)
 	if err != nil {

@@ -8,12 +8,14 @@ import (
 
 	"github.com/adal4ik/people-enrichment-service/internal/models"
 	"github.com/adal4ik/people-enrichment-service/internal/repository"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 type PersonServiceInterface interface {
 	CreatePerson(ctx context.Context, person models.Person) error
 	GetPersons(ctx context.Context, limit, offset, ageMin, ageMax int, name, surname, gender, nationality string) ([]models.Person, error)
+	GetPerson(ctx context.Context, id uuid.UUID) (models.Person, error)
 	DeletePerson(ctx context.Context, id string) error
 	UpdatePerson(ctx context.Context, person models.Person) error
 	GetAge(ctx context.Context, name string) (int, error)
@@ -74,6 +76,12 @@ func (p *PersonService) GetPersons(ctx context.Context, limit, offset, age_min, 
 		zap.String("nationality", nationality),
 	)
 	return p.repo.GetPersons(ctx, limit, offset, age_min, age_max, name, surname, gender, nationality)
+}
+
+func (p *PersonService) GetPerson(ctx context.Context, id uuid.UUID) (models.Person, error) {
+	p.logger.Debug("getting person by id", zap.Any("id", id))
+	return p.repo.GetPerson(ctx, id)
+
 }
 
 func (p *PersonService) DeletePerson(ctx context.Context, id string) error {

@@ -6,12 +6,14 @@ import (
 	"fmt"
 
 	"github.com/adal4ik/people-enrichment-service/internal/models"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 type PersonRepositoryInterface interface {
 	CreatePerson(ctx context.Context, person models.Person) error
 	GetPersons(ctx context.Context, limit, offset, ageMin, ageMax int, name, surname, gender, nationality string) ([]models.Person, error)
+	GetPerson(ctx context.Context, id uuid.UUID) (models.Person, error)
 	DeletePerson(ctx context.Context, id string) error
 	UpdatePerson(ctx context.Context, person models.Person) error
 }
@@ -117,6 +119,32 @@ func (p *PersonRepository) GetPersons(ctx context.Context, limit, offset, ageMin
 	}
 
 	return persons, nil
+}
+
+func (p *PersonRepository) GetPerson(ctx context.Context, id uuid.UUID) (models.Person, error) {
+	query := `
+		SELECT id, name, surname, patronymic, age, gender, nationality, created_at, updated_at
+		FROM persons
+		WHERE id = $1
+	`
+	p.logger.Debug("executing select query", zap.String("query", query), zap.Any("id", id))
+
+	var person models.Person
+	err := p.db.QueryRowContext(ctx, query, id).Scan(
+		&person.ID,
+		&person.Name,
+		&person.Surname,
+		&person.Patronymic,
+		&person.Age,
+		&person.Gender,
+		&person.Nationality,
+		&person.CreatedAt,
+		&person.UpdatedAt,
+	)
+	if err != nil {
+		return models.Person{}, fmt.Errorf("failed to get person: %w", err)
+	}
+	return person, nil
 }
 
 func (p *PersonRepository) DeletePerson(ctx context.Context, id string) error {
