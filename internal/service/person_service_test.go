@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Mock for PersonRepositoryInterface
 type mockPersonRepo struct {
 	mock.Mock
 }
@@ -31,7 +30,11 @@ func (m *mockPersonRepo) DeletePerson(ctx context.Context, id string) error {
 	return args.Error(0)
 }
 
-// Mock PersonService for API enrichment methods
+func (m *mockPersonRepo) UpdatePerson(ctx context.Context, person models.Person) error {
+	args := m.Called(ctx, person)
+	return args.Error(0)
+}
+
 type mockPersonService struct {
 	*PersonService
 	age         int
@@ -52,7 +55,6 @@ func (m *mockPersonService) GetNationality(ctx context.Context, name string) (st
 	return m.nationality, m.natErr
 }
 
-// Override CreatePerson to use the enrichment mocks
 func (m *mockPersonService) CreatePerson(ctx context.Context, person models.Person) error {
 	age, err := m.GetAge(ctx, person.Name)
 	if err != nil {
@@ -91,7 +93,6 @@ func TestCreatePerson_Success(t *testing.T) {
 		nationality:   "NG",
 	}
 
-	// Проверяем, что CreatePerson вызывается с нужными значениями
 	repo.On("CreatePerson", mock.Anything, mock.MatchedBy(func(p models.Person) bool {
 		assert.Equal(t, "John", p.Name)
 		assert.Equal(t, 74, p.Age)
@@ -110,11 +111,10 @@ func TestCreatePerson_AgeError(t *testing.T) {
 	logger := zap.NewNop()
 	person := models.Person{Name: "John"}
 
-	// Важно: инициализируем базовый PersonService с мок репозиторием
 	base := &PersonService{repo: repo, logger: logger}
 
 	svc := &mockPersonService{
-		PersonService: base, // <- вот здесь
+		PersonService: base,
 		ageErr:        errors.New("age error"),
 	}
 
@@ -122,7 +122,6 @@ func TestCreatePerson_AgeError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to enrich age")
 
-	// репозиторий не должен быть вызван, так что:
 	repo.AssertNotCalled(t, "CreatePerson", mock.Anything, mock.Anything)
 }
 
@@ -206,6 +205,34 @@ func TestDeletePerson_Error(t *testing.T) {
 	repo.On("DeletePerson", mock.Anything, id).Return(expectedErr)
 
 	err := svc.DeletePerson(context.Background(), id)
+	assert.Error(t, err)
+	assert.Equal(t, expectedErr, err)
+	repo.AssertExpectations(t)
+}
+
+func TestUpdatePerson_Success(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	svc := &PersonService{repo: repo, logger: logger}
+	person := models.Person{Name: "Jane", Age: 25}
+
+	repo.On("UpdatePerson", mock.Anything, person).Return(nil)
+
+	err := svc.UpdatePerson(context.Background(), person)
+	assert.NoError(t, err)
+	repo.AssertExpectations(t)
+}
+
+func TestUpdatePerson_Error(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	svc := &PersonService{repo: repo, logger: logger}
+	person := models.Person{Name: "Jane", Age: 25}
+	expectedErr := errors.New("update error")
+
+	repo.On("UpdatePerson", mock.Anything, person).Return(expectedErr)
+
+	err := svc.UpdatePerson(context.Background(), person)
 	assert.Error(t, err)
 	assert.Equal(t, expectedErr, err)
 	repo.AssertExpectations(t)
