@@ -47,7 +47,6 @@ func (p *PersonRepository) CreatePerson(ctx context.Context, person models.Perso
 		person.Gender,
 		person.Nationality,
 	)
-
 	if err != nil {
 		return fmt.Errorf("failed to insert person: %w", err)
 	}

@@ -49,9 +49,11 @@ type mockPersonService struct {
 func (m *mockPersonService) GetAge(ctx context.Context, name string) (int, error) {
 	return m.age, m.ageErr
 }
+
 func (m *mockPersonService) GetGender(ctx context.Context, name string) (string, error) {
 	return m.gender, m.genderErr
 }
+
 func (m *mockPersonService) GetNationality(ctx context.Context, name string) (string, error) {
 	return m.nationality, m.natErr
 }
@@ -331,6 +333,7 @@ func TestUpdatePerson_Error(t *testing.T) {
 	assert.Equal(t, expectedErr, err)
 	repo.AssertExpectations(t)
 }
+
 func (m *mockPersonRepo) GetPerson(ctx context.Context, id uuid.UUID) (models.Person, error) {
 	args := m.Called(ctx, id)
 	return args.Get(0).(models.Person), args.Error(1)

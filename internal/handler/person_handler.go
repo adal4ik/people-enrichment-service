@@ -175,6 +175,7 @@ func (p *PersonHandler) GetPerson(w http.ResponseWriter, req *http.Request) {
 		zap.String("nationality", person.Nationality),
 	)
 }
+
 func (p *PersonHandler) DeletePerson(w http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 	if id == "" {

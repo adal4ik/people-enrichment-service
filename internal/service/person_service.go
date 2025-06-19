@@ -142,6 +142,7 @@ func (p *PersonService) GetGender(ctx context.Context, name string) (string, err
 	}
 	return result.Gender, nil
 }
+
 func (p *PersonService) GetNationality(ctx context.Context, name string) (string, error) {
 	url := fmt.Sprintf("https://api.nationalize.io/?name=%s", name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
