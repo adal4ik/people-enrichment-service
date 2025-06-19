@@ -3,9 +3,11 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/adal4ik/people-enrichment-service/internal/models"
+	"github.com/adal4ik/people-enrichment-service/utils"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -14,7 +16,7 @@ type PersonRepositoryInterface interface {
 	CreatePerson(ctx context.Context, person models.Person) error
 	GetPersons(ctx context.Context, limit, offset, ageMin, ageMax int, name, surname, gender, nationality string) ([]models.Person, error)
 	GetPerson(ctx context.Context, id uuid.UUID) (models.Person, error)
-	DeletePerson(ctx context.Context, id string) error
+	DeletePerson(ctx context.Context, id uuid.UUID) error
 	UpdatePerson(ctx context.Context, person models.Person) error
 }
 
@@ -142,16 +144,19 @@ func (p *PersonRepository) GetPerson(ctx context.Context, id uuid.UUID) (models.
 		&person.UpdatedAt,
 	)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Person{}, sql.ErrNoRows
+		}
 		return models.Person{}, fmt.Errorf("failed to get person: %w", err)
 	}
 	return person, nil
 }
 
-func (p *PersonRepository) DeletePerson(ctx context.Context, id string) error {
+func (p *PersonRepository) DeletePerson(ctx context.Context, id uuid.UUID) error {
 	query := `
 		DELETE FROM persons WHERE id = $1
 	`
-	p.logger.Debug("executing delete query", zap.String("query", query), zap.String("id", id))
+	p.logger.Debug("executing delete query", zap.String("query", query), zap.Any("id", id))
 
 	result, err := p.db.ExecContext(ctx, query, id)
 	if err != nil {
@@ -173,7 +178,7 @@ func (p *PersonRepository) DeletePerson(ctx context.Context, id string) error {
 func (p *PersonRepository) UpdatePerson(ctx context.Context, person models.Person) error {
 	query := `UPDATE persons SET name = $1, surname = $2, patronymic = $3, age = $4, gender = $5, nationality = $6, updated_at = now() WHERE id = $7`
 	p.logger.Debug("executing update query", zap.String("query", query), zap.Any("person", person))
-	_, err := p.db.ExecContext(ctx, query,
+	res, err := p.db.ExecContext(ctx, query,
 		person.Name,
 		person.Surname,
 		person.Patronymic,
@@ -185,5 +190,15 @@ func (p *PersonRepository) UpdatePerson(ctx context.Context, person models.Perso
 	if err != nil {
 		return fmt.Errorf("failed to update person: %w", err)
 	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return utils.ErrPersonNotFound
+	}
+
 	return nil
 }

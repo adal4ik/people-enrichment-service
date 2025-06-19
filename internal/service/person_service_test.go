@@ -26,7 +26,7 @@ func (m *mockPersonRepo) GetPersons(ctx context.Context, limit, offset, ageMin, 
 	return args.Get(0).([]models.Person), args.Error(1)
 }
 
-func (m *mockPersonRepo) DeletePerson(ctx context.Context, id string) error {
+func (m *mockPersonRepo) DeletePerson(ctx context.Context, id uuid.UUID) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
@@ -183,11 +183,104 @@ func TestGetPersons(t *testing.T) {
 	repo.AssertExpectations(t)
 }
 
+func TestGetPersons_Pagination(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	expected := []models.Person{
+		{Name: "Alice"},
+		{Name: "Bob"},
+	}
+	limit := 2
+	offset := 5
+	repo.On("GetPersons", mock.Anything, limit, offset, 0, 100, "", "", "", "").Return(expected, nil)
+
+	svc := &PersonService{repo: repo, logger: logger}
+	res, err := svc.GetPersons(context.Background(), limit, offset, 0, 100, "", "", "", "")
+	assert.NoError(t, err)
+	assert.Equal(t, expected, res)
+	repo.AssertExpectations(t)
+}
+
+func TestGetPersons_FilterByName(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	expected := []models.Person{
+		{Name: "Charlie"},
+	}
+	repo.On("GetPersons", mock.Anything, 10, 0, 0, 100, "Charlie", "", "", "").Return(expected, nil)
+
+	svc := &PersonService{repo: repo, logger: logger}
+	res, err := svc.GetPersons(context.Background(), 10, 0, 0, 100, "Charlie", "", "", "")
+	assert.NoError(t, err)
+	assert.Equal(t, expected, res)
+	repo.AssertExpectations(t)
+}
+
+func TestGetPersons_FilterBySurname(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	expected := []models.Person{
+		{Name: "David", Surname: "Smith"},
+	}
+	repo.On("GetPersons", mock.Anything, 10, 0, 0, 100, "", "Smith", "", "").Return(expected, nil)
+
+	svc := &PersonService{repo: repo, logger: logger}
+	res, err := svc.GetPersons(context.Background(), 10, 0, 0, 100, "", "Smith", "", "")
+	assert.NoError(t, err)
+	assert.Equal(t, expected, res)
+	repo.AssertExpectations(t)
+}
+
+func TestGetPersons_FilterByGender(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	expected := []models.Person{
+		{Name: "Eve", Gender: "female"},
+	}
+	repo.On("GetPersons", mock.Anything, 10, 0, 0, 100, "", "", "female", "").Return(expected, nil)
+
+	svc := &PersonService{repo: repo, logger: logger}
+	res, err := svc.GetPersons(context.Background(), 10, 0, 0, 100, "", "", "female", "")
+	assert.NoError(t, err)
+	assert.Equal(t, expected, res)
+	repo.AssertExpectations(t)
+}
+
+func TestGetPersons_FilterByNationality(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	expected := []models.Person{
+		{Name: "Frank", Nationality: "DE"},
+	}
+	repo.On("GetPersons", mock.Anything, 10, 0, 0, 100, "", "", "", "DE").Return(expected, nil)
+
+	svc := &PersonService{repo: repo, logger: logger}
+	res, err := svc.GetPersons(context.Background(), 10, 0, 0, 100, "", "", "", "DE")
+	assert.NoError(t, err)
+	assert.Equal(t, expected, res)
+	repo.AssertExpectations(t)
+}
+
+func TestGetPersons_FilterByAgeRange(t *testing.T) {
+	repo := new(mockPersonRepo)
+	logger := zap.NewNop()
+	expected := []models.Person{
+		{Name: "Grace", Age: 30},
+	}
+	repo.On("GetPersons", mock.Anything, 10, 0, 25, 35, "", "", "", "").Return(expected, nil)
+
+	svc := &PersonService{repo: repo, logger: logger}
+	res, err := svc.GetPersons(context.Background(), 10, 0, 25, 35, "", "", "", "")
+	assert.NoError(t, err)
+	assert.Equal(t, expected, res)
+	repo.AssertExpectations(t)
+}
+
 func TestDeletePerson_Success(t *testing.T) {
 	repo := new(mockPersonRepo)
 	logger := zap.NewNop()
 	svc := &PersonService{repo: repo, logger: logger}
-	id := "123"
+	id := uuid.New()
 
 	repo.On("DeletePerson", mock.Anything, id).Return(nil)
 
@@ -200,7 +293,7 @@ func TestDeletePerson_Error(t *testing.T) {
 	repo := new(mockPersonRepo)
 	logger := zap.NewNop()
 	svc := &PersonService{repo: repo, logger: logger}
-	id := "456"
+	id := uuid.New()
 	expectedErr := errors.New("delete error")
 
 	repo.On("DeletePerson", mock.Anything, id).Return(expectedErr)

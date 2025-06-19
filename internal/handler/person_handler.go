@@ -1,12 +1,15 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/adal4ik/people-enrichment-service/internal/models"
 	"github.com/adal4ik/people-enrichment-service/internal/service"
+	"github.com/adal4ik/people-enrichment-service/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -52,6 +55,10 @@ func (p *PersonHandler) CreatePerson(w http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&person)
 	if person.Name == "" {
 		p.handleError(w, req, 400, "name is required", nil)
+		return
+	}
+	if person.Surname == "" {
+		p.handleError(w, req, 400, "surname is required", nil)
 		return
 	}
 	if err != nil {
@@ -143,15 +150,17 @@ func (p *PersonHandler) GetPerson(w http.ResponseWriter, req *http.Request) {
 		p.handleError(w, req, 400, "invalid UUID format for id", err)
 		return
 	}
+	p.logger.Debug("GetPerson request", zap.String("id", id))
 	person, err := p.service.GetPerson(req.Context(), uuidValue)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			p.handleError(w, req, 404, "person not found", nil)
+			return
+		}
 		p.handleError(w, req, 500, "failed to retrieve person", err)
 		return
 	}
-	if person.ID == uuid.Nil {
-		p.handleError(w, req, 404, "person not found", nil)
-		return
-	}
+
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(person); err != nil {
 		p.handleError(w, req, 500, "failed to encode response", err)
@@ -172,8 +181,13 @@ func (p *PersonHandler) DeletePerson(w http.ResponseWriter, req *http.Request) {
 		p.handleError(w, req, 400, "id parameter is required", nil)
 		return
 	}
-
-	err := p.service.DeletePerson(req.Context(), id)
+	p.logger.Debug("DeletePerson request", zap.String("id", id))
+	uuidValue, err := uuid.Parse(id)
+	if err != nil {
+		p.handleError(w, req, 400, "invalid UUID format for id", err)
+		return
+	}
+	err = p.service.DeletePerson(req.Context(), uuidValue)
 	if err != nil {
 		p.handleError(w, req, 500, "failed to delete person", err)
 		return
@@ -204,10 +218,15 @@ func (p *PersonHandler) UpdatePerson(w http.ResponseWriter, req *http.Request) {
 	person.ID = uuidValue
 
 	err = p.service.UpdatePerson(req.Context(), person)
+	if errors.Is(err, utils.ErrPersonNotFound) {
+		http.Error(w, "Person not found", http.StatusNotFound)
+		return
+	}
 	if err != nil {
 		p.handleError(w, req, 500, "failed to update person", err)
 		return
 	}
+
 	p.logger.Info("person updated successfully", zap.String("id", id))
 	resp := models.APIResponse{
 		Code:    200,
