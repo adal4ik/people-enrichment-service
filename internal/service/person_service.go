@@ -14,6 +14,7 @@ import (
 type PersonServiceInterface interface {
 	CreatePerson(ctx context.Context, person models.Person) error
 	GetPersons(ctx context.Context, limit, offset, ageMin, ageMax int, name, surname, gender, nationality string) ([]models.Person, error)
+	DeletePerson(ctx context.Context, id string) error
 	GetAge(ctx context.Context, name string) (int, error)
 	GetGender(ctx context.Context, name string) (string, error)
 	GetNationality(ctx context.Context, name string) (string, error)
@@ -156,4 +157,9 @@ func (p *PersonService) GetNationality(ctx context.Context, name string) (string
 	}
 
 	return "", nil
+}
+
+func (p *PersonService) DeletePerson(ctx context.Context, id string) error {
+	p.logger.Debug("deleting person", zap.String("id", id))
+	return p.repo.DeletePerson(ctx, id)
 }

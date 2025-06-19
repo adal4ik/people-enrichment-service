@@ -7,6 +7,7 @@ import (
 
 	"github.com/adal4ik/people-enrichment-service/internal/models"
 	"github.com/adal4ik/people-enrichment-service/internal/service"
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -128,4 +129,24 @@ func (p *PersonHandler) GetPersons(w http.ResponseWriter, req *http.Request) {
 		zap.Int("offset", offset),
 		zap.String("name", name),
 		zap.String("surname", surname))
+}
+
+func (p *PersonHandler) DeletePerson(w http.ResponseWriter, req *http.Request) {
+	id := chi.URLParam(req, "id")
+	if id == "" {
+		p.handleError(w, req, 400, "id parameter is required", nil)
+		return
+	}
+
+	err := p.service.DeletePerson(req.Context(), id)
+	if err != nil {
+		p.handleError(w, req, 500, "failed to delete person", err)
+		return
+	}
+	p.logger.Info("person deleted successfully", zap.String("id", id))
+	resp := models.APIResponse{
+		Code:    200,
+		Message: "Successfully deleted",
+	}
+	resp.Send(w)
 }

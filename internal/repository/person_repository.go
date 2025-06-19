@@ -12,6 +12,7 @@ import (
 type PersonRepositoryInterface interface {
 	CreatePerson(ctx context.Context, person models.Person) error
 	GetPersons(ctx context.Context, limit, offset, ageMin, ageMax int, name, surname, gender, nationality string) ([]models.Person, error)
+	DeletePerson(ctx context.Context, id string) error
 }
 
 type PersonRepository struct {
@@ -115,4 +116,27 @@ func (p *PersonRepository) GetPersons(ctx context.Context, limit, offset, ageMin
 	}
 
 	return persons, nil
+}
+
+func (p *PersonRepository) DeletePerson(ctx context.Context, id string) error {
+	query := `
+		DELETE FROM persons WHERE id = $1
+	`
+	p.logger.Debug("executing delete query", zap.String("query", query), zap.String("id", id))
+
+	result, err := p.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete person: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
