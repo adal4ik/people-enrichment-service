@@ -29,8 +29,8 @@ func main() {
 		logger.Fatal("failed to connect to database", zap.Error(err))
 	}
 	logger.Info("successfully connected to database")
-	repositories := repository.New(db)
-	services := service.New(repositories)
+	repositories := repository.New(db, logger)
+	services := service.New(repositories, logger)
 	handlers := handler.New(services, logger)
 	mux := handler.Router(*handlers)
 	httpServer := &http.Server{

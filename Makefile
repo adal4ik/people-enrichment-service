@@ -1,3 +1,6 @@
+include .env
+export $(shell sed 's/=.*//' .env)
+
 APP_NAME=people-enrichment-service
 
 up:

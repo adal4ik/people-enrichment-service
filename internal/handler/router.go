@@ -8,5 +8,8 @@ import (
 
 func Router(handlers Handler) http.Handler {
 	r := chi.NewRouter()
+
+	r.Post("/person", handlers.PersonHandler.CreatePerson)
+
 	return r
 }

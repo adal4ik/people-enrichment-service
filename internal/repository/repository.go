@@ -1,13 +1,17 @@
 package repository
 
-import "database/sql"
+import (
+	"database/sql"
+
+	"go.uber.org/zap"
+)
 
 type Repository struct {
 	PersonRepository *PersonRepository
 }
 
-func New(db *sql.DB) *Repository {
+func New(db *sql.DB, logger *zap.Logger) *Repository {
 	return &Repository{
-		PersonRepository: NewPersonRepository(db),
+		PersonRepository: NewPersonRepository(db, logger),
 	}
 }

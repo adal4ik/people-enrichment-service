@@ -21,7 +21,7 @@ func ConnectDB(ctx context.Context, cfg config.Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to open DB: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	ticker := time.NewTicker(2 * time.Second)
