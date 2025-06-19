@@ -10,6 +10,7 @@ func Router(handlers Handler) http.Handler {
 	r := chi.NewRouter()
 
 	r.Post("/person", handlers.PersonHandler.CreatePerson)
+	r.Get("/persons", handlers.PersonHandler.GetPersons)
 
 	return r
 }

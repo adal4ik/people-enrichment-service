@@ -13,7 +13,10 @@ import (
 
 type PersonServiceInterface interface {
 	CreatePerson(ctx context.Context, person models.Person) error
-	// GetPersons(ctx context.Context)
+	GetPersons(ctx context.Context, limit, offset, ageMin, ageMax int, name, surname, gender, nationality string) ([]models.Person, error)
+	GetAge(ctx context.Context, name string) (int, error)
+	GetGender(ctx context.Context, name string) (string, error)
+	GetNationality(ctx context.Context, name string) (string, error)
 }
 
 type PersonService struct {
@@ -29,17 +32,17 @@ func NewPersonService(repo repository.PersonRepositoryInterface, logger *zap.Log
 }
 
 func (p *PersonService) CreatePerson(ctx context.Context, person models.Person) error {
-	age, err := p.getAge(ctx, person.Name)
+	age, err := p.GetAge(ctx, person.Name)
 	if err != nil {
 		p.logger.Error("failed to get age", zap.Error(err))
 		return fmt.Errorf("failed to enrich age: %w", err)
 	}
-	gender, err := p.getGender(ctx, person.Name)
+	gender, err := p.GetGender(ctx, person.Name)
 	if err != nil {
 		p.logger.Error("failed to get gender", zap.Error(err))
 		return fmt.Errorf("failed to enrich gender: %w", err)
 	}
-	nationality, err := p.getNationality(ctx, person.Name)
+	nationality, err := p.GetNationality(ctx, person.Name)
 	if err != nil {
 		p.logger.Error("failed to get nationality", zap.Error(err))
 		return fmt.Errorf("failed to enrich nationality: %w", err)
@@ -57,7 +60,21 @@ func (p *PersonService) CreatePerson(ctx context.Context, person models.Person) 
 	return p.repo.CreatePerson(ctx, person)
 }
 
-func (p *PersonService) getAge(ctx context.Context, name string) (int, error) {
+func (p *PersonService) GetPersons(ctx context.Context, limit, offset, age_min, age_max int, name, surname, gender, nationality string) ([]models.Person, error) {
+	p.logger.Debug("Service GetPersons called",
+		zap.Int("limit", limit),
+		zap.Int("offset", offset),
+		zap.Int("age_min", age_min),
+		zap.Int("age_max", age_max),
+		zap.String("name", name),
+		zap.String("surname", surname),
+		zap.String("gender", gender),
+		zap.String("nationality", nationality),
+	)
+	return p.repo.GetPersons(ctx, limit, offset, age_min, age_max, name, surname, gender, nationality)
+}
+
+func (p *PersonService) GetAge(ctx context.Context, name string) (int, error) {
 	url := fmt.Sprintf("https://api.agify.io/?name=%s", name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -82,7 +99,7 @@ func (p *PersonService) getAge(ctx context.Context, name string) (int, error) {
 	return result.Age, nil
 }
 
-func (p *PersonService) getGender(ctx context.Context, name string) (string, error) {
+func (p *PersonService) GetGender(ctx context.Context, name string) (string, error) {
 	url := fmt.Sprintf("https://api.genderize.io/?name=%s", name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -106,7 +123,7 @@ func (p *PersonService) getGender(ctx context.Context, name string) (string, err
 	}
 	return result.Gender, nil
 }
-func (p *PersonService) getNationality(ctx context.Context, name string) (string, error) {
+func (p *PersonService) GetNationality(ctx context.Context, name string) (string, error) {
 	url := fmt.Sprintf("https://api.nationalize.io/?name=%s", name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {

@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/adal4ik/people-enrichment-service/internal/models"
 	"github.com/adal4ik/people-enrichment-service/internal/service"
@@ -58,9 +59,73 @@ func (p *PersonHandler) CreatePerson(w http.ResponseWriter, req *http.Request) {
 		p.handleError(w, req, 500, "failed to save person", err)
 		return
 	}
+	p.logger.Info("person inserted successfully", zap.String("name", person.Name))
 	resp := models.APIResponse{
 		Code:    201,
 		Message: "Successfully created",
 	}
 	resp.Send(w)
+}
+
+func (p *PersonHandler) GetPersons(w http.ResponseWriter, req *http.Request) {
+	query := req.URL.Query()
+	limitStr := query.Get("limit")
+	offsetStr := query.Get("offset")
+	name := query.Get("name")
+	surname := query.Get("surname")
+	gender := query.Get("gender")
+	nationality := query.Get("nationality")
+
+	ageMinStr := query.Get("age_min")
+	ageMaxStr := query.Get("age_max")
+
+	limit := 10
+	offset := 0
+	ageMin := 0
+	ageMax := 200
+
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		limit = l
+	}
+	if o, err := strconv.Atoi(offsetStr); err == nil && o >= 0 {
+		offset = o
+	}
+
+	if aMin, err := strconv.Atoi(ageMinStr); err == nil && aMin >= 0 {
+		ageMin = aMin
+	}
+	if aMax, err := strconv.Atoi(ageMaxStr); err == nil && aMax >= 0 {
+		ageMax = aMax
+	}
+	if ageMin > ageMax {
+		p.handleError(w, req, 400, "age_min cannot be greater than age_max", nil)
+		return
+	}
+	p.logger.Debug("GetPersons request params",
+		zap.Int("limit", limit),
+		zap.Int("offset", offset),
+		zap.Int("age_min", ageMin),
+		zap.Int("age_max", ageMax),
+		zap.String("name", name),
+		zap.String("surname", surname),
+		zap.String("gender", gender),
+		zap.String("nationality", nationality),
+	)
+
+	persons, err := p.service.GetPersons(req.Context(), limit, offset, ageMin, ageMax, name, surname, gender, nationality)
+	if err != nil {
+		p.handleError(w, req, 500, "failed to retrieve persons", err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(persons); err != nil {
+		p.handleError(w, req, 500, "failed to encode response", err)
+		return
+	}
+	p.logger.Info("retrieved persons",
+		zap.Int("count", len(persons)),
+		zap.Int("limit", limit),
+		zap.Int("offset", offset),
+		zap.String("name", name),
+		zap.String("surname", surname))
 }
