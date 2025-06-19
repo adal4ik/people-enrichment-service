@@ -211,8 +211,17 @@ func (p *PersonHandler) UpdatePerson(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	var person models.Person
 	err = decoder.Decode(&person)
+
 	if err != nil {
 		p.handleError(w, req, 400, "failed to decode request body", err)
+		return
+	}
+	if person.Name == "" || person.Surname == "" {
+		p.handleError(w, req, 400, "name and surname are required", nil)
+		return
+	}
+	if person.Age == 0 || person.Gender == "" || person.Nationality == "" {
+		p.handleError(w, req, 400, "age, gender, and nationality must not be empty", nil)
 		return
 	}
 	person.ID = uuidValue
