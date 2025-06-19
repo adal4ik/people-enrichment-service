@@ -1,36 +1,36 @@
 # people-enrichment-service
 
-Сервис для обогащения информации о людях по ФИО через открытые API (возраст, пол, национальность) с сохранением в PostgreSQL.
+A service for enriching personal information (age, gender, nationality) by full name using public APIs and saving the results to PostgreSQL.
 
-## Возможности
+## Features
 
-- Добавление нового человека (обогащение через публичные API)
-- Получение списка людей с фильтрами и пагинацией
-- Получение информации о человеке по id
-- Обновление информации о человеке
-- Удаление человека по id
-- Логирование (zap)
-- Swagger-документация (docs/swagger.yml)
-- Конфигурация через .env
+- Add a new person (enrichment via public APIs)
+- Get a list of people with filters and pagination
+- Get person info by ID
+- Update person information
+- Delete person by ID
+- Logging (zap)
+- Swagger documentation (`docs/swagger.yml`)
+- Configuration via `.env`
 
-## Используемые публичные API
+## Public APIs Used
 
-- [Agify.io (возраст)](https://api.agify.io)
-- [Genderize.io (пол)](https://api.genderize.io)
-- [Nationalize.io (национальность)](https://api.nationalize.io)
+- [Agify.io (age)](https://api.agify.io)
+- [Genderize.io (gender)](https://api.genderize.io)
+- [Nationalize.io (nationality)](https://api.nationalize.io)
 
-## Быстрый старт
+## Quick Start
 
-### 1. Клонируйте репозиторий
+### 1. Clone the repository
 
 ```sh
 git clone https://github.com/your-username/people-enrichment-service.git
 cd people-enrichment-service
 ```
 
-### 2. Заполните `.env`
+### 2. Fill in the `.env` file
 
-Пример содержимого:
+Example:
 ```
 DB_HOST=db
 DB_PORT=5432
@@ -40,58 +40,57 @@ DB_NAME=people
 APP_PORT=8080
 ```
 
-### 3. Запустите сервис и БД через Docker
+### 3. Start the service and database with Docker
 
 ```sh
 make up
 ```
 
-Сервис будет доступен на [http://localhost:8080](http://localhost:8080)
+The service will be available at [http://localhost:8080](http://localhost:8080)
 
-### 4. Остановить сервис
+### 4. Stop the service
 
 ```sh
 make down
 ```
 
-### 5. Локальный запуск (без Docker)
+### 5. Local run (without Docker)
 
-- Убедитесь, что PostgreSQL запущен и параметры совпадают с .env
-- Выполните миграции (например, через psql или мигратор)
-- Запустите приложение:
+- Make sure PostgreSQL is running and matches your `.env` settings
+- Apply migrations (e.g., via `psql` or a migration tool)
+- Run the application:
 
 ```sh
 make run
 ```
 
-### 6. Справка по make-командам
+### 6. Makefile commands help
 
-Для просмотра всех доступных команд Makefile выполните:
+To see all available Makefile commands:
 
 ```sh
 make help
 ```
 
-Вы увидите список команд, которые можно использовать для управления сервисом, контейнерами и сборкой проекта.
+You will see a list of commands for managing the service, containers, and building the project.
 
-## Документация API
+## API Documentation
 
-Swagger-описание доступно в файле [`docs/swagger.yml`](docs/swagger.yml).  
-Можно визуализировать через [Swagger Editor](https://editor.swagger.io/).
+Swagger spec is available at [`docs/swagger.yml`](docs/swagger.yml).  
+You can visualize it using [Swagger Editor](https://editor.swagger.io/).
 
-## Как посмотреть Swagger
+## How to view Swagger
 
-1. Запустите сервис командой:
+1. Start the service:
    ```sh
-   make run
+   make up
    ```
-2. Перейдите в браузере на [http://localhost:8081](http://localhost:8081)
-3. Введите в поле поиска `/swagger.yml` и нажмите Enter — откроется документация вашего API.
+2. Open [http://localhost:8081](http://localhost:8081) in your browser
+3. Enter `/swagger.yml` in the search field and press Enter — your API documentation will open.
 
+## Example Requests
 
-## Примеры запросов
-
-**Добавить человека:**
+**Add a person:**
 ```http
 POST /person
 Content-Type: application/json
@@ -103,32 +102,32 @@ Content-Type: application/json
 }
 ```
 
-**Получить список:**
+**Get a list:**
 ```http
 GET /person?limit=10&offset=0&name=Dmitriy
 ```
 
-## Тесты
+## Tests
 
-Для запуска unit-тестов:
+To run unit tests:
 ```sh
 go test ./...
 ```
 
-## Структура проекта
+## Project Structure
 
 ```
 .
-├── cmd/app/                # Точка входа приложения
+├── cmd/app/                # Application entry point
 ├── internal/
-│   ├── handler/            # HTTP-ручки (контроллеры)
-│   ├── service/            # Бизнес-логика
-│   ├── repository/         # Работа с БД
-│   ├── models/             # Описания структур
-│   └── config/             # Загрузка конфигурации
-├── migrations/             # SQL-миграции для БД
-├── docs/                   # Swagger и другая документация
-├── utils/                  # Вспомогательные функции
+│   ├── handler/            # HTTP handlers (controllers)
+│   ├── service/            # Business logic
+│   ├── repository/         # Database access
+│   ├── models/             # Data models
+│   └── config/             # Configuration loader
+├── migrations/             # SQL migrations for DB
+├── docs/                   # Swagger and other docs
+├── utils/                  # Utility functions
 ├── Dockerfile
 ├── docker-compose.yml
 ├── Makefile
@@ -137,5 +136,5 @@ go test ./...
 
 ---
 
-**Автор:**  
+**Author:**  
 adal4ik
