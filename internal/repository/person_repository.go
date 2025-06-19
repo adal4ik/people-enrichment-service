@@ -13,6 +13,7 @@ type PersonRepositoryInterface interface {
 	CreatePerson(ctx context.Context, person models.Person) error
 	GetPersons(ctx context.Context, limit, offset, ageMin, ageMax int, name, surname, gender, nationality string) ([]models.Person, error)
 	DeletePerson(ctx context.Context, id string) error
+	UpdatePerson(ctx context.Context, person models.Person) error
 }
 
 type PersonRepository struct {
@@ -138,5 +139,23 @@ func (p *PersonRepository) DeletePerson(ctx context.Context, id string) error {
 		return sql.ErrNoRows
 	}
 
+	return nil
+}
+
+func (p *PersonRepository) UpdatePerson(ctx context.Context, person models.Person) error {
+	query := `UPDATE persons SET name = $1, surname = $2, patronymic = $3, age = $4, gender = $5, nationality = $6, updated_at = now() WHERE id = $7`
+	p.logger.Debug("executing update query", zap.String("query", query), zap.Any("person", person))
+	_, err := p.db.ExecContext(ctx, query,
+		person.Name,
+		person.Surname,
+		person.Patronymic,
+		person.Age,
+		person.Gender,
+		person.Nationality,
+		person.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update person: %w", err)
+	}
 	return nil
 }

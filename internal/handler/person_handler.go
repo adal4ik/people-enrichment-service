@@ -8,6 +8,7 @@ import (
 	"github.com/adal4ik/people-enrichment-service/internal/models"
 	"github.com/adal4ik/people-enrichment-service/internal/service"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -147,6 +148,36 @@ func (p *PersonHandler) DeletePerson(w http.ResponseWriter, req *http.Request) {
 	resp := models.APIResponse{
 		Code:    200,
 		Message: "Successfully deleted",
+	}
+	resp.Send(w)
+}
+
+func (p *PersonHandler) UpdatePerson(w http.ResponseWriter, req *http.Request) {
+	id := chi.URLParam(req, "id")
+	uuidValue, err := uuid.Parse(id)
+	if err != nil {
+		p.handleError(w, req, 400, "invalid UUID format for id", err)
+		return
+	}
+
+	decoder := json.NewDecoder(req.Body)
+	var person models.Person
+	err = decoder.Decode(&person)
+	if err != nil {
+		p.handleError(w, req, 400, "failed to decode request body", err)
+		return
+	}
+	person.ID = uuidValue // Ensure the ID is set from the URL
+
+	err = p.service.UpdatePerson(req.Context(), person)
+	if err != nil {
+		p.handleError(w, req, 500, "failed to update person", err)
+		return
+	}
+	p.logger.Info("person updated successfully", zap.String("id", id))
+	resp := models.APIResponse{
+		Code:    200,
+		Message: "Successfully updated",
 	}
 	resp.Send(w)
 }

@@ -15,6 +15,7 @@ type PersonServiceInterface interface {
 	CreatePerson(ctx context.Context, person models.Person) error
 	GetPersons(ctx context.Context, limit, offset, ageMin, ageMax int, name, surname, gender, nationality string) ([]models.Person, error)
 	DeletePerson(ctx context.Context, id string) error
+	UpdatePerson(ctx context.Context, person models.Person) error
 	GetAge(ctx context.Context, name string) (int, error)
 	GetGender(ctx context.Context, name string) (string, error)
 	GetNationality(ctx context.Context, name string) (string, error)
@@ -73,6 +74,16 @@ func (p *PersonService) GetPersons(ctx context.Context, limit, offset, age_min, 
 		zap.String("nationality", nationality),
 	)
 	return p.repo.GetPersons(ctx, limit, offset, age_min, age_max, name, surname, gender, nationality)
+}
+
+func (p *PersonService) DeletePerson(ctx context.Context, id string) error {
+	p.logger.Debug("deleting person", zap.String("id", id))
+	return p.repo.DeletePerson(ctx, id)
+}
+
+func (p *PersonService) UpdatePerson(ctx context.Context, person models.Person) error {
+	p.logger.Debug("updating person", zap.Any("person", person))
+	return p.repo.UpdatePerson(ctx, person)
 }
 
 func (p *PersonService) GetAge(ctx context.Context, name string) (int, error) {
@@ -157,9 +168,4 @@ func (p *PersonService) GetNationality(ctx context.Context, name string) (string
 	}
 
 	return "", nil
-}
-
-func (p *PersonService) DeletePerson(ctx context.Context, id string) error {
-	p.logger.Debug("deleting person", zap.String("id", id))
-	return p.repo.DeletePerson(ctx, id)
 }
