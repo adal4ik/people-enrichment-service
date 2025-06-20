@@ -37,7 +37,6 @@ DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_NAME=people
-APP_PORT=8080
 ```
 
 ### 3. Start the service and database with Docker
@@ -111,7 +110,7 @@ GET /person?limit=10&offset=0&name=Dmitriy
 
 To run unit tests:
 ```sh
-go test ./...
+go test ./... -v
 ```
 
 ## Project Structure
