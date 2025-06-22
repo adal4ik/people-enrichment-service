@@ -123,7 +123,8 @@ go test ./... -v
 │   ├── service/            # Business logic
 │   ├── repository/         # Database access
 │   ├── models/             # Data models
-│   └── config/             # Configuration loader
+│   ├── config/             # Configuration loader
+│   └── logger/             # Logger initialization and configuration
 ├── migrations/             # SQL migrations for DB
 ├── docs/                   # Swagger and other docs
 ├── utils/                  # Utility functions
