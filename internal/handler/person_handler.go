@@ -41,7 +41,7 @@ func (p *PersonHandler) handleError(w http.ResponseWriter, r *http.Request, code
 		)
 	}
 
-	jsonErr := models.APIError{
+	jsonErr := utils.APIError{
 		Code:     code,
 		Message:  message,
 		Resource: r.URL.Path,
@@ -73,7 +73,7 @@ func (p *PersonHandler) CreatePerson(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	p.logger.Info("person inserted successfully", zap.String("name", person.Name))
-	resp := models.APIResponse{
+	resp := utils.APIResponse{
 		Code:    201,
 		Message: "Successfully created",
 	}
@@ -194,7 +194,7 @@ func (p *PersonHandler) DeletePerson(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	p.logger.Info("person deleted successfully", zap.String("id", id))
-	resp := models.APIResponse{
+	resp := utils.APIResponse{
 		Code:    200,
 		Message: "Successfully deleted",
 	}
@@ -238,7 +238,7 @@ func (p *PersonHandler) UpdatePerson(w http.ResponseWriter, req *http.Request) {
 	}
 
 	p.logger.Info("person updated successfully", zap.String("id", id))
-	resp := models.APIResponse{
+	resp := utils.APIResponse{
 		Code:    200,
 		Message: "Successfully updated",
 	}
