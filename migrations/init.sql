@@ -1,6 +1,8 @@
 -- Enable extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+CREATE TYPE person_gender AS ENUM ('male', 'female', 'other');
+
 -- Table
 CREATE TABLE IF NOT EXISTS persons (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -8,7 +10,7 @@ CREATE TABLE IF NOT EXISTS persons (
     surname TEXT NOT NULL,
     patronymic TEXT,
     age INT,
-    gender TEXT,
+    gender person_gender,
     nationality TEXT,
     created_at TIMESTAMP DEFAULT now(),
     updated_at TIMESTAMP DEFAULT now()
