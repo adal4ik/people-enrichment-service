@@ -2,49 +2,99 @@ openapi: 3.0.3
 info:
   title: People Enrichment Service API
   version: 1.0.0
-  description: API for managing people records.
+  description: |
+    A service to enrich people data (name, surname, etc.) using public APIs.
+    Supports creating, retrieving, updating, and deleting person records, with filtering and pagination.
 servers:
   - url: http://localhost:8080
+
 paths:
   /person:
     post:
       summary: Create a new person
+      description: Adds a new person and enriches their data with age, gender, and nationality.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Person'
+              $ref: '#/components/schemas/CreatePersonRequest'
+            examples:
+              example1:
+                value:
+                  name: Dmitriy
+                  surname: Ushakov
+                  patronymic: Vasilevich
       responses:
         '201':
-          description: Person created
+          description: Person created successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Person'
         '400':
           description: Invalid input
+
   /persons:
     get:
-      summary: Get list of persons
+      summary: Get persons list
+      description: Retrieves a list of persons with optional filters and pagination.
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+        - name: surname
+          in: query
+          schema:
+            type: string
+        - name: gender
+          in: query
+          schema:
+            type: string
+            enum: [male, female, unknown]
+        - name: nationality
+          in: query
+          schema:
+            type: string
+        - name: age_min
+          in: query
+          schema:
+            type: integer
+        - name: age_max
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
       responses:
         '200':
-          description: List of persons
+          description: List of people
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Person'
+
   /person/{id}:
     get:
       summary: Get person by ID
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '200':
           description: Person found
@@ -54,33 +104,37 @@ paths:
                 $ref: '#/components/schemas/Person'
         '404':
           description: Person not found
+
     delete:
       summary: Delete person by ID
       parameters:
-        - in: path
-          name: id
+        - name: id
+          in: path
           required: true
           schema:
             type: string
+            format: uuid
       responses:
         '204':
           description: Person deleted
         '404':
           description: Person not found
+
     put:
       summary: Update person by ID
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Person'
+              $ref: '#/components/schemas/UpdatePersonRequest'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         '200':
           description: Person updated
@@ -92,8 +146,47 @@ paths:
           description: Invalid input
         '404':
           description: Person not found
+
 components:
   schemas:
+    CreatePersonRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Dmitriy
+        surname:
+          type: string
+          example: Ushakov
+        patronymic:
+          type: string
+          example: Vasilevich
+      required:
+        - name
+        - surname
+
+    UpdatePersonRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Dmitriy
+        surname:
+          type: string
+          example: Ushakov
+        patronymic:
+          type: string
+          example: Vasilevich
+        age:
+          type: integer
+          example: 30
+        gender:
+          type: string
+          example: male
+        nationality:
+          type: string
+          example: RU
+
     Person:
       type: object
       properties:
@@ -103,22 +196,22 @@ components:
           example: "74925167-3782-4ea9-b379-2c0b0cab711d"
         name:
           type: string
-          example: "John"
+          example: Dmitriy
         surname:
           type: string
-          example: "Doe"
+          example: Ushakov
         patronymic:
           type: string
-          example: "Ivanovich"
+          example: Vasilevich
         age:
           type: integer
           example: 30
         gender:
           type: string
-          example: "male"
+          example: male
         nationality:
           type: string
-          example: "US"
+          example: RU
         created_at:
           type: string
           format: date-time
@@ -127,6 +220,3 @@ components:
           type: string
           format: date-time
           example: "2025-06-19T12:34:56Z"
-      required:
-        - name
-        - surname
