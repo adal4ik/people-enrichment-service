@@ -30,7 +30,7 @@ func main() {
 	}
 	logger.Info("successfully connected to database")
 	repositories := repository.New(db, logger)
-	services := service.New(repositories, logger)
+	services := service.New(repositories, cfg, logger)
 	handlers := handler.New(services, logger)
 	mux := handler.Router(*handlers)
 	httpServer := &http.Server{

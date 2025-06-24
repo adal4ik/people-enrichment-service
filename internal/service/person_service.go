@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/adal4ik/people-enrichment-service/internal/config"
 	"github.com/adal4ik/people-enrichment-service/internal/models"
 	"github.com/adal4ik/people-enrichment-service/internal/repository"
 	"github.com/google/uuid"
@@ -25,12 +26,14 @@ type PersonServiceInterface interface {
 
 type PersonService struct {
 	repo   repository.PersonRepositoryInterface
+	cfg    config.Config
 	logger *zap.Logger
 }
 
-func NewPersonService(repo repository.PersonRepositoryInterface, logger *zap.Logger) *PersonService {
+func NewPersonService(repo repository.PersonRepositoryInterface, cfg config.Config, logger *zap.Logger) *PersonService {
 	return &PersonService{
 		repo:   repo,
+		cfg:    cfg,
 		logger: logger,
 	}
 }
@@ -94,7 +97,7 @@ func (p *PersonService) UpdatePerson(ctx context.Context, person models.Person) 
 }
 
 func (p *PersonService) GetAge(ctx context.Context, name string) (int, error) {
-	url := fmt.Sprintf("https://api.agify.io/?name=%s", name)
+	url := fmt.Sprintf("%s&name=%s", p.cfg.APIAgeURL, name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create request: %w", err)
@@ -119,7 +122,7 @@ func (p *PersonService) GetAge(ctx context.Context, name string) (int, error) {
 }
 
 func (p *PersonService) GetGender(ctx context.Context, name string) (string, error) {
-	url := fmt.Sprintf("https://api.genderize.io/?name=%s", name)
+	url := fmt.Sprintf("%s&name=%s", p.cfg.APIGenderURL, name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
@@ -144,7 +147,7 @@ func (p *PersonService) GetGender(ctx context.Context, name string) (string, err
 }
 
 func (p *PersonService) GetNationality(ctx context.Context, name string) (string, error) {
-	url := fmt.Sprintf("https://api.nationalize.io/?name=%s", name)
+	url := fmt.Sprintf("%s&name=%s", p.cfg.APINationURL, name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
