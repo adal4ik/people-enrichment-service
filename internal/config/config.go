@@ -17,6 +17,8 @@ type Config struct {
 	APIGenderURL string
 	APIAgeURL    string
 	APINationURL string
+
+	LogLevel string
 }
 
 func LoadConfig() Config {
@@ -34,6 +36,7 @@ func LoadConfig() Config {
 		APIGenderURL: getEnv("API_GENDER_URL", "https://api.genderapi.io"),
 		APIAgeURL:    getEnv("API_AGE_URL", "https://api.agify.io"),
 		APINationURL: getEnv("API_NATION_URL", "https://api.nationalize.io"),
+		LogLevel:     getEnv("LOG_LEVEL", "debug"),
 	}
 }
 

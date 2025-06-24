@@ -19,7 +19,7 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 	ctx := context.Background()
-	logger, err := logger.NewLogger()
+	logger, err := logger.NewLogger(cfg.LogLevel)
 	if err != nil {
 		log.Fatalf("can't initialize zap logger: %v", err)
 	}
