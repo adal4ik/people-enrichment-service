@@ -60,9 +60,9 @@ func (p *PersonService) CreatePerson(ctx context.Context, person models.Person) 
 		zap.String("nationality", nationality),
 	)
 
-	person.Age = age
-	person.Gender = gender
-	person.Nationality = nationality
+	*person.Age = age
+	*person.Gender = gender
+	*person.Nationality = nationality
 
 	return p.repo.CreatePerson(ctx, person)
 }

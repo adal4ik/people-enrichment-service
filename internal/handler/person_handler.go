@@ -170,9 +170,9 @@ func (p *PersonHandler) GetPerson(w http.ResponseWriter, req *http.Request) {
 		zap.String("id", id),
 		zap.String("name", person.Name),
 		zap.String("surname", person.Surname),
-		zap.Int("age", person.Age),
-		zap.String("gender", person.Gender),
-		zap.String("nationality", person.Nationality),
+		zap.Int("age", *person.Age),
+		zap.String("gender", *person.Gender),
+		zap.String("nationality", *person.Nationality),
 	)
 }
 
@@ -219,10 +219,6 @@ func (p *PersonHandler) UpdatePerson(w http.ResponseWriter, req *http.Request) {
 	}
 	if person.Name == "" || person.Surname == "" {
 		p.handleError(w, req, 400, "name and surname are required", nil)
-		return
-	}
-	if person.Age == 0 || person.Gender == "" || person.Nationality == "" {
-		p.handleError(w, req, 400, "age, gender, and nationality must not be empty", nil)
 		return
 	}
 	person.ID = uuidValue

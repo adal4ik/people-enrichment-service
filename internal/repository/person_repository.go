@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/adal4ik/people-enrichment-service/internal/models"
 	"github.com/adal4ik/people-enrichment-service/utils"
@@ -107,8 +108,6 @@ func (p *PersonRepository) GetPersons(ctx context.Context, limit, offset, ageMin
 			&person.Age,
 			&person.Gender,
 			&person.Nationality,
-			&person.CreatedAt,
-			&person.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan person: %w", err)
 		}
@@ -139,8 +138,6 @@ func (p *PersonRepository) GetPerson(ctx context.Context, id uuid.UUID) (models.
 		&person.Age,
 		&person.Gender,
 		&person.Nationality,
-		&person.CreatedAt,
-		&person.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -175,17 +172,45 @@ func (p *PersonRepository) DeletePerson(ctx context.Context, id uuid.UUID) error
 }
 
 func (p *PersonRepository) UpdatePerson(ctx context.Context, person models.Person) error {
-	query := `UPDATE persons SET name = $1, surname = $2, patronymic = $3, age = $4, gender = $5, nationality = $6, updated_at = now() WHERE id = $7`
-	p.logger.Debug("executing update query", zap.String("query", query), zap.Any("person", person))
-	res, err := p.db.ExecContext(ctx, query,
-		person.Name,
-		person.Surname,
-		person.Patronymic,
-		person.Age,
-		person.Gender,
-		person.Nationality,
-		person.ID,
-	)
+	query := "UPDATE persons SET "
+	args := []interface{}{}
+	i := 1
+
+	query += fmt.Sprintf("name = $%d, ", i)
+	args = append(args, person.Name)
+	i++
+	query += fmt.Sprintf("surname = $%d, ", i)
+	args = append(args, person.Surname)
+	i++
+
+	if person.Patronymic != nil {
+		query += fmt.Sprintf("patronymic = $%d, ", i)
+		args = append(args, *person.Patronymic)
+		i++
+	}
+	if person.Age != nil {
+		query += fmt.Sprintf("age = $%d, ", i)
+		args = append(args, *person.Age)
+		i++
+	}
+	if person.Gender != nil {
+		query += fmt.Sprintf("gender = $%d, ", i)
+		args = append(args, *person.Gender)
+		i++
+	}
+	if person.Nationality != nil {
+		query += fmt.Sprintf("nationality = $%d, ", i)
+		args = append(args, *person.Nationality)
+		i++
+	}
+
+	query = strings.TrimSuffix(query, ", ")
+	query += fmt.Sprintf(", updated_at = now() WHERE id = $%d", i)
+	args = append(args, person.ID)
+
+	p.logger.Debug("executing dynamic update query", zap.String("query", query), zap.Any("args", args))
+
+	res, err := p.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("failed to update person: %w", err)
 	}
@@ -194,7 +219,6 @@ func (p *PersonRepository) UpdatePerson(ctx context.Context, person models.Perso
 	if err != nil {
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
-
 	if rowsAffected == 0 {
 		return utils.ErrPersonNotFound
 	}

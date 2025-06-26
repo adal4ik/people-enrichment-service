@@ -63,24 +63,28 @@ func (m *mockPersonService) CreatePerson(ctx context.Context, person models.Pers
 	if err != nil {
 		return errors.New("failed to enrich age: " + err.Error())
 	}
-	person.Age = age
+	person.Age = &age
 
 	gender, err := m.GetGender(ctx, person.Name)
 	if err != nil {
 		return errors.New("failed to enrich gender: " + err.Error())
 	}
-	person.Gender = gender
+	person.Gender = &gender
 
 	nationality, err := m.GetNationality(ctx, person.Name)
 	if err != nil {
 		return errors.New("failed to enrich nationality: " + err.Error())
 	}
-	person.Nationality = nationality
+	person.Nationality = &nationality
 
 	if m.PersonService == nil || m.PersonService.repo == nil {
 		return errors.New("repository is not initialized")
 	}
 	return m.PersonService.repo.CreatePerson(ctx, person)
+}
+
+func ptr[T any](v T) *T {
+	return &v
 }
 
 func TestCreatePerson_Success(t *testing.T) {
@@ -98,9 +102,9 @@ func TestCreatePerson_Success(t *testing.T) {
 
 	repo.On("CreatePerson", mock.Anything, mock.MatchedBy(func(p models.Person) bool {
 		assert.Equal(t, "John", p.Name)
-		assert.Equal(t, 74, p.Age)
-		assert.Equal(t, "male", p.Gender)
-		assert.Equal(t, "NG", p.Nationality)
+		assert.Equal(t, ptr(74), p.Age)
+		assert.Equal(t, ptr("male"), p.Gender)
+		assert.Equal(t, ptr("NG"), p.Nationality)
 		return true
 	})).Return(nil)
 
@@ -236,8 +240,9 @@ func TestGetPersons_FilterBySurname(t *testing.T) {
 func TestGetPersons_FilterByGender(t *testing.T) {
 	repo := new(mockPersonRepo)
 	logger := zap.NewNop()
+	gender := "female"
 	expected := []models.Person{
-		{Name: "Eve", Gender: "female"},
+		{Name: "Eve", Gender: &gender},
 	}
 	repo.On("GetPersons", mock.Anything, 10, 0, 0, 100, "", "", "female", "").Return(expected, nil)
 
@@ -251,8 +256,9 @@ func TestGetPersons_FilterByGender(t *testing.T) {
 func TestGetPersons_FilterByNationality(t *testing.T) {
 	repo := new(mockPersonRepo)
 	logger := zap.NewNop()
+	nation := "DE"
 	expected := []models.Person{
-		{Name: "Frank", Nationality: "DE"},
+		{Name: "Frank", Nationality: &nation},
 	}
 	repo.On("GetPersons", mock.Anything, 10, 0, 0, 100, "", "", "", "DE").Return(expected, nil)
 
@@ -266,8 +272,9 @@ func TestGetPersons_FilterByNationality(t *testing.T) {
 func TestGetPersons_FilterByAgeRange(t *testing.T) {
 	repo := new(mockPersonRepo)
 	logger := zap.NewNop()
+	age := 30
 	expected := []models.Person{
-		{Name: "Grace", Age: 30},
+		{Name: "Grace", Age: &age},
 	}
 	repo.On("GetPersons", mock.Anything, 10, 0, 25, 35, "", "", "", "").Return(expected, nil)
 
@@ -309,8 +316,9 @@ func TestDeletePerson_Error(t *testing.T) {
 func TestUpdatePerson_Success(t *testing.T) {
 	repo := new(mockPersonRepo)
 	logger := zap.NewNop()
+	age := 25
 	svc := &PersonService{repo: repo, logger: logger}
-	person := models.Person{Name: "Jane", Age: 25}
+	person := models.Person{Name: "Jane", Age: &age}
 
 	repo.On("UpdatePerson", mock.Anything, person).Return(nil)
 
@@ -322,8 +330,9 @@ func TestUpdatePerson_Success(t *testing.T) {
 func TestUpdatePerson_Error(t *testing.T) {
 	repo := new(mockPersonRepo)
 	logger := zap.NewNop()
+	age := 25
 	svc := &PersonService{repo: repo, logger: logger}
-	person := models.Person{Name: "Jane", Age: 25}
+	person := models.Person{Name: "Jane", Age: &age}
 	expectedErr := errors.New("update error")
 
 	repo.On("UpdatePerson", mock.Anything, person).Return(expectedErr)
@@ -342,9 +351,10 @@ func (m *mockPersonRepo) GetPerson(ctx context.Context, id uuid.UUID) (models.Pe
 func TestGetPerson_Success(t *testing.T) {
 	repo := new(mockPersonRepo)
 	logger := zap.NewNop()
+	age := 42
 	svc := &PersonService{repo: repo, logger: logger}
 	id := uuid.New()
-	expected := models.Person{Name: "Test", Age: 42}
+	expected := models.Person{Name: "Test", Age: &age}
 
 	repo.On("GetPerson", mock.Anything, id).Return(expected, nil)
 
