@@ -3,6 +3,30 @@ export $(shell sed 's/=.*//' .env)
 
 APP_NAME=people-enrichment-service
 
+MIGRATIONS_PATH=./migrations
+DB_URL=postgres://postgres:yourpassword@localhost:5432/peopledb?sslmode=disable
+
+## Run latest migrations
+migrate-up:
+	migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" up
+
+## Roll back last migration
+migrate-down:
+	migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" down 1
+
+## Force set DB version (use with caution!)
+migrate-force:
+	migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" force 1
+
+## Drop entire DB schema (dangerous!)
+migrate-drop:
+	migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" drop -f
+
+## Show current migration version
+migrate-version:
+	migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" version
+
+
 up:
 	docker-compose up --build
 
