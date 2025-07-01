@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/adal4ik/people-enrichment-service/internal/models"
 	"github.com/adal4ik/people-enrichment-service/internal/service"
@@ -50,21 +51,33 @@ func (p *PersonHandler) handleError(w http.ResponseWriter, r *http.Request, code
 }
 
 func (p *PersonHandler) CreatePerson(w http.ResponseWriter, req *http.Request) {
-	decoder := json.NewDecoder(req.Body)
-	var person models.Person
-	err := decoder.Decode(&person)
-	if person.Name == "" {
-		p.handleError(w, req, 400, "name is required", nil)
-		return
-	}
-	if person.Surname == "" {
-		p.handleError(w, req, 400, "surname is required", nil)
-		return
-	}
+	var r models.CreatePerson
+	err := json.NewDecoder(req.Body).Decode(&r)
 	if err != nil {
 		p.handleError(w, req, 400, "failed to decode request body", err)
 		return
 	}
+	if r.Name == "" {
+		p.handleError(w, req, 400, "name is required", nil)
+		return
+	}
+	if r.Surname == "" {
+		p.handleError(w, req, 400, "surname is required", nil)
+		return
+	}
+
+	var patronymic *string
+	if r.Patronymic != "" {
+		patronymic = &r.Patronymic
+	}
+
+	person := models.Person{
+		ID:         uuid.New(),
+		Name:       r.Name,
+		Surname:    r.Surname,
+		Patronymic: patronymic,
+	}
+
 	p.logger.Debug("received person payload", zap.Any("person", person))
 
 	err = p.service.CreatePerson(req.Context(), person)
@@ -72,6 +85,7 @@ func (p *PersonHandler) CreatePerson(w http.ResponseWriter, req *http.Request) {
 		p.handleError(w, req, 500, "failed to save person", err)
 		return
 	}
+
 	p.logger.Info("person inserted successfully", zap.String("name", person.Name))
 	resp := utils.APIResponse{
 		Code:    201,
@@ -210,19 +224,31 @@ func (p *PersonHandler) UpdatePerson(w http.ResponseWriter, req *http.Request) {
 	}
 
 	decoder := json.NewDecoder(req.Body)
-	var person models.Person
-	err = decoder.Decode(&person)
+	var r models.UpdatePerson
+	err = decoder.Decode(&r)
 
 	if err != nil {
 		p.handleError(w, req, 400, "failed to decode request body", err)
 		return
 	}
-	if person.Name == "" || person.Surname == "" {
+	if r.Name == "" || r.Surname == "" {
 		p.handleError(w, req, 400, "name and surname are required", nil)
 		return
 	}
-	person.ID = uuidValue
+	if r.Patronymic != nil && strings.TrimSpace(*r.Patronymic) == "" {
+		r.Patronymic = nil
+	}
 
+	person := models.Person{
+		ID:          uuidValue,
+		Name:        r.Name,
+		Surname:     r.Surname,
+		Patronymic:  r.Patronymic,
+		Age:         r.Age,
+		Gender:      r.Gender,
+		Nationality: r.Nationality,
+	}
+	p.logger.Debug("checking", zap.Any("person", person))
 	err = p.service.UpdatePerson(req.Context(), person)
 	if errors.Is(err, utils.ErrPersonNotFound) {
 		http.Error(w, "Person not found", http.StatusNotFound)

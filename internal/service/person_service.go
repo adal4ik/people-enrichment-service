@@ -60,9 +60,9 @@ func (p *PersonService) CreatePerson(ctx context.Context, person models.Person) 
 		zap.String("nationality", nationality),
 	)
 
-	*person.Age = age
-	*person.Gender = gender
-	*person.Nationality = nationality
+	person.Age = &age
+	person.Gender = &gender
+	person.Nationality = &nationality
 
 	return p.repo.CreatePerson(ctx, person)
 }
@@ -97,7 +97,7 @@ func (p *PersonService) UpdatePerson(ctx context.Context, person models.Person) 
 }
 
 func (p *PersonService) GetAge(ctx context.Context, name string) (int, error) {
-	url := fmt.Sprintf("%s&name=%s", p.cfg.APIAgeURL, name)
+	url := fmt.Sprintf("%s?name=%s", p.cfg.APIAgeURL, name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create request: %w", err)
@@ -122,7 +122,7 @@ func (p *PersonService) GetAge(ctx context.Context, name string) (int, error) {
 }
 
 func (p *PersonService) GetGender(ctx context.Context, name string) (string, error) {
-	url := fmt.Sprintf("%s&name=%s", p.cfg.APIGenderURL, name)
+	url := fmt.Sprintf("%s?name=%s", p.cfg.APIGenderURL, name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
@@ -147,7 +147,7 @@ func (p *PersonService) GetGender(ctx context.Context, name string) (string, err
 }
 
 func (p *PersonService) GetNationality(ctx context.Context, name string) (string, error) {
-	url := fmt.Sprintf("%s&name=%s", p.cfg.APINationURL, name)
+	url := fmt.Sprintf("%s?name=%s", p.cfg.APINationURL, name)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)

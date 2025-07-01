@@ -35,12 +35,13 @@ func NewPersonRepository(db *sql.DB, logger *zap.Logger) *PersonRepository {
 
 func (p *PersonRepository) CreatePerson(ctx context.Context, person models.Person) error {
 	query := `
-		INSERT INTO persons (name, surname, patronymic, age, gender, nationality, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, now(), now())
+		INSERT INTO persons (id, name, surname, patronymic, age, gender, nationality, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7,now(), now())
 	`
 	p.logger.Debug("executing insert query", zap.String("query", query), zap.Any("person", person))
 
 	_, err := p.db.ExecContext(ctx, query,
+		person.ID,
 		person.Name,
 		person.Surname,
 		person.Patronymic,
@@ -138,6 +139,8 @@ func (p *PersonRepository) GetPerson(ctx context.Context, id uuid.UUID) (models.
 		&person.Age,
 		&person.Gender,
 		&person.Nationality,
+		&person.CreatedAt,
+		&person.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -179,15 +182,20 @@ func (p *PersonRepository) UpdatePerson(ctx context.Context, person models.Perso
 	query += fmt.Sprintf("name = $%d, ", i)
 	args = append(args, person.Name)
 	i++
+
 	query += fmt.Sprintf("surname = $%d, ", i)
 	args = append(args, person.Surname)
 	i++
 
+	query += "patronymic = "
 	if person.Patronymic != nil {
-		query += fmt.Sprintf("patronymic = $%d, ", i)
+		query += fmt.Sprintf("$%d, ", i)
 		args = append(args, *person.Patronymic)
 		i++
+	} else {
+		query += "NULL, "
 	}
+
 	if person.Age != nil {
 		query += fmt.Sprintf("age = $%d, ", i)
 		args = append(args, *person.Age)
