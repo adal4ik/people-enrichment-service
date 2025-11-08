@@ -136,5 +136,23 @@ go test ./... -v
 
 ---
 
+## ✨ Features
+
+✅ **Implemented**
+- Data enrichment from multiple external APIs  
+- Modular architecture for API connectors  
+- YAML-based configuration for data sources  
+- Centralized logging and error handling  
+
+🚧 **In Progress**
+- Batch enrichment for multiple users  
+- Retry mechanism with exponential backoff  
+
+🔮 **Planned**
+- Queue-based enrichment (RabbitMQ/Kafka)  
+- Graph-based relationship mapping  
+- Dashboard for enrichment statistics
+---
+
 **Author:**  
 adal4ik
